@@ -13,7 +13,7 @@ declare namespace Express {
     sendPayload: <T extends PayloadType>(
       payload: T,
       name: string,
-      links?: Record<string, { href: string }>
+      links?: string[]
     ) => Response;
   }
   interface Request {

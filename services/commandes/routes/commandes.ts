@@ -1,33 +1,40 @@
-import { Router } from "express";
+import { RequestHandler, Router } from "express";
 import { StatusCodes } from "http-status-codes";
-import db from "../database";
-import itemsRouter, { getItems } from "./items";
+import itemsRouter from "./items";
+import {
+  createNewOrder,
+  getAllOrders,
+  getOneOrder,
+  replaceOneOrder,
+} from "../data/commandes";
 
 const router = Router();
 
-type Commande = {
-  id: string;
-  created_at: Date;
-  updated_at?: Date;
-  livraison: Date;
-  nom: string;
-  mail: string;
-  montant?: number;
-  remise?: number;
-  token?: string;
-  client_id?: number;
-  ref_paiement?: string;
-  date_paiement?: Date;
-  mode_paiement?: number;
-  status: number;
+const auth: RequestHandler = async (req, res, next) => {
+  const rt = req.query.token ?? req.get("X-lbs-token");
+  if (rt) {
+    const order = await getOneOrder(req.params.id, {
+      query: { select: ["token"] },
+    });
+    if (rt === order?.token || !order) {
+      next();
+    } else {
+      res.sendError(
+        StatusCodes.FORBIDDEN,
+        "Le token de la commande est érroné."
+      );
+    }
+  } else {
+    res.sendError(
+      StatusCodes.UNAUTHORIZED,
+      "Le token de la commande est nécéssaire."
+    );
+  }
 };
 
 router.get("/", async (req, res) => {
   try {
-    const commandes = await db
-      .from<Commande>("commande")
-      .select("id", "mail", "created_at", "montant")
-      .then();
+    const commandes = await getAllOrders();
     res.sendPayload(
       commandes.map((c) => ({
         id: c.id,
@@ -45,43 +52,54 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    const commandes = await db
-      .from<Commande>("commande")
-      .select("id", "mail", "nom", "created_at", "livraison", "montant")
-      .where("id", req.params.id)
-      .limit(1)
-      .then();
-    if (commandes.length > 0) {
-      const baseURL = req.protocol + "://" + req.get("host") + req.originalUrl;
-      const commande = commandes[0];
+    const id = await createNewOrder(req.body);
 
-      let items = undefined;
-      if (req.query.embed === "items") {
-        items = await getItems(req.params.id);
-      }
-
-      res.sendPayload(
-        {
-          id: commande.id,
-          mail_client: commande.mail,
-          nom_client: commande.nom,
-          date_commande: commande.created_at,
-          date_livraison: commande.livraison,
-          montant: commande.montant,
-          items,
+    if (id) {
+      const commande = await getOneOrder(id, {
+        query: {
+          extendSelect: ["token"],
         },
-        "commande",
-        {
-          self: {
-            href: baseURL,
+      });
+
+      if (commande) {
+        res.status(StatusCodes.CREATED).sendPayload(
+          {
+            id: commande.id,
+            mail_client: commande.mail,
+            nom_client: commande.nom,
+            date_commande: commande.created_at,
+            date_livraison: commande.livraison,
+            montant: commande.montant,
           },
-          items: {
-            href: baseURL + "/items",
-          },
-        }
+          "commande",
+          ["items"]
+        );
+      } else {
+        res.sendError(StatusCodes.NOT_FOUND, "Ressource non disponible");
+      }
+    } else {
+      res.sendError(
+        StatusCodes.NOT_ACCEPTABLE,
+        "Le contenu envoyé n'est pas correct"
       );
+    }
+  } catch (error) {
+    res.sendError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      "Une erreur est survenue : " + (error as Error).message
+    );
+  }
+});
+
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const commande = await getOneOrder(req.params.id, {
+      query: req.query,
+    });
+    if (commande) {
+      res.sendPayload(commande, "commande", ["items"]);
     } else {
       res.sendError(StatusCodes.NOT_FOUND, "Ressource non disponible");
     }
@@ -93,29 +111,16 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   try {
-    const commandes = await db
-      .from<Commande>("commande")
-      .select("id")
-      .where("id", req.params.id)
-      .limit(1)
-      .then();
-    if (commandes.length > 0) {
-      const {
-        mail_client: mail,
-        nom_client: nom,
-        date_livraison: livraison,
-      } = req.body;
-      if (mail && nom && livraison) {
-        await db
-          .from<Commande>("commande")
-          .where("id", req.params.id)
-          .update({
-            mail,
-            nom,
-            livraison: livraison && new Date(livraison),
-          });
+    const commande = await getOneOrder(req.params.id, {
+      query: {
+        select: ["id"],
+      },
+    });
+    if (commande) {
+      const result = await replaceOneOrder(req.params.id, req.body);
+      if (result) {
         res.status(StatusCodes.NO_CONTENT).send({});
       } else {
         res.sendError(
@@ -124,7 +129,7 @@ router.put("/:id", async (req, res) => {
         );
       }
     } else {
-      res.sendError(StatusCodes.NOT_FOUND, "Ressourcee non disponible");
+      res.sendError(StatusCodes.NOT_FOUND, "Ressource non disponible");
     }
   } catch (error) {
     res.sendError(
@@ -136,6 +141,7 @@ router.put("/:id", async (req, res) => {
 
 router.use(
   "/:id/items",
+  auth,
   (req, res, next) => {
     req.previous = {
       params: req.params,

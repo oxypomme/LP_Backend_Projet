@@ -13,6 +13,7 @@ const buildResponse = <T extends PayloadType>(
     count?: number; // Total items available
   } = {
     count: 1,
+    size: 1,
   };
 
   if (payload instanceof Object) {
@@ -21,8 +22,8 @@ const buildResponse = <T extends PayloadType>(
       data.size = meta.size ? parseInt(meta.size) : 15;
       data.count = payload.length;
 
-      const maxPage = Math.ceil(data.count / data.size);
-      let page = meta.page ? parseInt(meta.page) : 1;
+      const maxPage = Math.ceil(data.count / data.size) - 1;
+      let page = meta.page ? parseInt(meta.page) : 0;
       if (page < 0) {
         page = 0;
       }
@@ -62,11 +63,22 @@ const handler: RequestHandler = (req, res, next) => {
       url: req.method + " " + req.originalUrl,
     });
   };
-  res.sendPayload = (payload, name, links) =>
-    res.json({
+  res.sendPayload = (payload, name, links) => {
+    const baseURL = req.protocol + "://" + req.get("host") + req.originalUrl;
+
+    const urls: Record<string, { href: string }> = {};
+    if (links) {
+      urls.self = { href: baseURL };
+      for (const name of links) {
+        urls[name] = { href: `${baseURL}/${name}` };
+      }
+    }
+
+    return res.json({
       ...buildResponse(payload, name, req.query),
-      links: links ?? undefined,
+      links: links ? urls : undefined,
     });
+  };
   next();
 };
 
