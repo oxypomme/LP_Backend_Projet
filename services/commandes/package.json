@@ -14,6 +14,9 @@
 	"devDependencies": {
 		"@types/express": "^4.17.13",
 		"@types/morgan": "^1.9.3",
+		"@typescript-eslint/eslint-plugin": "^5.13.0",
+		"@typescript-eslint/parser": "^5.13.0",
+		"eslint": "^8.10.0",
 		"nodemon": "^2.0.15"
 	},
 	"scripts": {

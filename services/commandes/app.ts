@@ -13,14 +13,14 @@ app.use(apiMiddleware);
 app.use("/commandes", commandesRouter);
 
 app.get("*", (req, res) => {
-	res.sendError(StatusCodes.NOT_FOUND, "Cette adresse n'existe pas");
+  res.sendError(StatusCodes.NOT_FOUND, "Cette adresse n'existe pas");
 });
 
 app.use("*", (req, res) => {
-	res.sendError(
-		StatusCodes.METHOD_NOT_ALLOWED,
-		"Cette méthode n'est pas autorisée"
-	);
+  res.sendError(
+    StatusCodes.METHOD_NOT_ALLOWED,
+    "Cette méthode n'est pas autorisée"
+  );
 });
 
 export = app;

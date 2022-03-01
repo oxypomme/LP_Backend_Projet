@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
 
-const buildResponse = <T>(payload: T, name: string = "payload") => {
+const buildResponse = <T>(payload: T, name = "payload") => {
   const data: {
     type?: string;
     count?: number;
