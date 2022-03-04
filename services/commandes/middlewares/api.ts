@@ -10,13 +10,15 @@ type PaginatedQuery<T> = Partial<Record<"page" | "size", T>>;
  * @param payload The content
  * @param name The content name
  * @param meta The options of the pagination
+ * @param baseurl The base url
  *
  * @returns Formated data
  */
 const buildResponse = <T extends PayloadType>(
   payload: T,
   name = "payload",
-  meta: PaginatedQuery<string> = {}
+  meta: PaginatedQuery<string> = {},
+  baseurl = "/"
 ) => {
   const data: PaginatedQuery<number> & {
     type?: string; // Type of payload
@@ -25,6 +27,9 @@ const buildResponse = <T extends PayloadType>(
     count: 1,
     size: 1,
   };
+
+  let links: Record<string, { href: string } | undefined> | undefined =
+    undefined;
 
   if (payload instanceof Object) {
     if (payload instanceof Array) {
@@ -43,6 +48,19 @@ const buildResponse = <T extends PayloadType>(
         (data.page - 1) * data.size,
         data.page * data.size
       ) as T;
+
+      links = {
+        next:
+          data.page < maxPage
+            ? { href: baseurl + `?page=${data.page + 1}&size=${data.size}` }
+            : undefined,
+        prev:
+          data.page > 1
+            ? { href: baseurl + `?page=${data.page - 1}&size=${data.size}` }
+            : undefined,
+        last: { href: baseurl + `?page=${maxPage}&size=${data.size}` },
+        first: { href: baseurl + `?page=1&size=${data.size}` },
+      };
     } else {
       data.type = "resource";
     }
@@ -53,6 +71,7 @@ const buildResponse = <T extends PayloadType>(
   return {
     ...data,
     [name]: payload,
+    links,
   };
 };
 
@@ -89,19 +108,21 @@ const handler: RequestHandler = (req, res, next) => {
     });
   };
   res.sendPayload = (payload, name, links) => {
-    const baseURL = req.protocol + "://" + req.get("host") + req.originalUrl;
-
     const urls: Record<string, { href: string }> = {};
+    const url = new URL(
+      req.protocol + "://" + req.get("host") + req.originalUrl
+    );
     if (links) {
-      urls.self = { href: baseURL };
+      urls.self = { href: url.pathname };
       for (const name of links) {
-        urls[name] = { href: `${baseURL}/${name}` };
+        urls[name] = { href: `${url.pathname}/${name}` };
       }
     }
 
+    const response = buildResponse(payload, name, req.query, url.pathname);
     return res.json({
-      ...buildResponse(payload, name, req.query),
-      links: links ? urls : undefined,
+      ...response,
+      links: links ? urls : response.links,
     });
   };
   next();
