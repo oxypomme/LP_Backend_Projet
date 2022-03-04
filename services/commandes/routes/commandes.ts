@@ -1,12 +1,12 @@
 import { RequestHandler, Router } from "express";
 import { StatusCodes } from "http-status-codes";
-import itemsRouter from "./items";
 import {
   createNewOrder,
   getAllOrders,
   getOneOrder,
   replaceOneOrder,
 } from "../data/commandes";
+import itemsRouter from "./items";
 
 const router = Router();
 
@@ -56,38 +56,31 @@ router.post("/", async (req, res) => {
   try {
     const id = await createNewOrder(req.body);
 
-    if (id) {
-      const commande = await getOneOrder(id, {
-        query: {
-          extendSelect: ["token"],
-        },
-      });
+    const commande = await getOneOrder(id, {
+      query: {
+        extendSelect: ["token"],
+      },
+    });
 
-      if (commande) {
-        res.status(StatusCodes.CREATED).sendPayload(
-          {
-            id: commande.id,
-            mail_client: commande.mail,
-            nom_client: commande.nom,
-            date_commande: commande.created_at,
-            date_livraison: commande.livraison,
-            montant: commande.montant,
-          },
-          "commande",
-          ["items"]
-        );
-      } else {
-        res.sendError(StatusCodes.NOT_FOUND, "Ressource non disponible");
-      }
-    } else {
-      res.sendError(
-        StatusCodes.NOT_ACCEPTABLE,
-        "Le contenu envoyé n'est pas correct"
+    if (commande) {
+      res.status(StatusCodes.CREATED).sendPayload(
+        {
+          id: commande.id,
+          mail_client: commande.mail,
+          nom_client: commande.nom,
+          date_commande: commande.created_at,
+          date_livraison: commande.livraison,
+          montant: commande.montant,
+        },
+        "commande",
+        ["items"]
       );
+    } else {
+      res.sendError(StatusCodes.NOT_FOUND, "Ressource non disponible");
     }
   } catch (error) {
     res.sendError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
+      (error as CustomError).status ?? StatusCodes.INTERNAL_SERVER_ERROR,
       "Une erreur est survenue : " + (error as Error).message
     );
   }
@@ -105,7 +98,7 @@ router.get("/:id", auth, async (req, res) => {
     }
   } catch (error) {
     res.sendError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
+      (error as CustomError).status ?? StatusCodes.INTERNAL_SERVER_ERROR,
       "Une erreur est survenue : " + (error as Error).message
     );
   }
@@ -133,7 +126,7 @@ router.put("/:id", auth, async (req, res) => {
     }
   } catch (error) {
     res.sendError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
+      (error as CustomError).status ?? StatusCodes.INTERNAL_SERVER_ERROR,
       "Une erreur est survenue : " + (error as Error).message
     );
   }

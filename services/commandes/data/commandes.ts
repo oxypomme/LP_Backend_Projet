@@ -1,33 +1,10 @@
-import dayjs from "dayjs";
-import db from "../database";
-import { v4 as uuidv4 } from "uuid";
-import { getOneOrderItems, Item } from "./items";
 import { randomBytes } from "crypto";
-
-export enum CommandeStatus {
-  CREATED = 1,
-  PAID,
-  PROGRESS,
-  READY,
-  DELIVERED,
-}
-
-export type Commande = {
-  id: string;
-  created_at: Date;
-  updated_at?: Date;
-  livraison: Date;
-  nom: string;
-  mail: string;
-  montant?: number;
-  remise?: number;
-  token?: string;
-  client_id?: number;
-  ref_paiement?: string;
-  date_paiement?: Date;
-  mode_paiement?: number;
-  status: CommandeStatus;
-};
+import { v4 as uuidv4 } from "uuid";
+import db from "../database";
+import { assertInputCommande } from "../schemas/commande";
+import type { Commande } from "../types/commandes";
+import { CommandeStatus } from "../types/ECommandeStatus";
+import { getOneOrderItems, Item } from "./items";
 
 type GetOptions = {
   query?: {
@@ -35,13 +12,6 @@ type GetOptions = {
     select?: (keyof Commande)[];
     extendSelect?: (keyof Commande)[];
   };
-};
-
-type EditData = {
-  nom: string;
-  mail: string;
-  livraison: { date: string; heure: string };
-  items?: { uri: string; q: number; libelle: string; tarif: number }[];
 };
 
 export const getAllOrders = async () =>
@@ -84,45 +54,46 @@ export const getOneOrder = async (id: Commande["id"], options: GetOptions) => {
   }
 };
 
-export const replaceOneOrder = async (id: Commande["id"], data: EditData) => {
-  const { mail, nom, livraison } = data;
+export const replaceOneOrder = async (id: Commande["id"], data: unknown) => {
+  // Validating parameters
+  const { mail, nom, livraison } = await assertInputCommande(data);
   const { date, heure } = livraison;
 
-  if (mail && nom && livraison) {
-    return await db
-      .from<Commande>("commande")
-      .where("id", id)
-      .update({
-        mail,
-        nom,
-        livraison: livraison
-          ? dayjs(date + " " + heure, "D-M-YYYY h:m").toDate()
-          : undefined,
-      });
-  } else {
-    return undefined;
-  }
+  // Updating date with hour
+  const hourArr = heure.split(":");
+  date.setHours(+hourArr[0], +hourArr[1]);
+
+  return await db.from<Commande>("commande").where("id", id).update({
+    mail,
+    nom,
+    livraison: date,
+  });
 };
 
-export const createNewOrder = async (data: EditData) => {
-  const { nom, mail, livraison, items } = data;
+export const createNewOrder = async (data: unknown) => {
+  // Validating parameters
+  const { nom, mail, livraison, items } = await assertInputCommande(data);
   const { date, heure } = livraison;
 
-  if (nom && mail && livraison && date && heure && items) {
-    const commande: Commande = {
-      id: uuidv4(),
-      created_at: dayjs().toDate(),
-      livraison: dayjs(date + " " + heure, "D-M-YYYY h:m").toDate(),
-      nom,
-      mail,
-      remise: 0,
-      token: randomBytes(16).toString("hex"),
-      status: CommandeStatus.CREATED,
-    };
+  // Updating date with hour
+  const hourArr = heure.split(":");
+  date.setHours(+hourArr[0], +hourArr[1]);
 
-    const trx = await db.transaction();
-    try {
-      let montant = 0;
+  const commande: Commande = {
+    id: uuidv4(),
+    created_at: new Date(),
+    livraison: date,
+    nom,
+    mail,
+    remise: 0,
+    token: randomBytes(16).toString("hex"),
+    status: CommandeStatus.CREATED,
+  };
+
+  const trx = await db.transaction();
+  try {
+    let montant = 0;
+    if (items) {
       for (const item of items) {
         montant += item.tarif * item.q;
         await trx
@@ -136,19 +107,17 @@ export const createNewOrder = async (data: EditData) => {
           })
           .then();
       }
-      await trx
-        .from<Commande>("commande")
-        .insert({ ...commande, montant })
-        .then();
-      await trx.commit();
-
-      return commande.id;
-    } catch (error) {
-      await trx.rollback();
-
-      throw new Error("Une erreur est survenue lors de l'ajout des items");
     }
-  } else {
-    return undefined;
+    await trx
+      .from<Commande>("commande")
+      .insert({ ...commande, montant })
+      .then();
+    await trx.commit();
+
+    return commande.id;
+  } catch (error) {
+    await trx.rollback();
+
+    throw error;
   }
 };

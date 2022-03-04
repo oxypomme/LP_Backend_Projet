@@ -1,11 +1,14 @@
-// import type { StatusCodes } from "http-status-code";
-
 type PayloadType =
   | Array<unknown>
   | Record<string, unknown>
   | boolean
   | number
   | string;
+
+type CustomError = {
+  status: StatusCodes;
+  message: string;
+};
 
 declare namespace Express {
   interface Response {
