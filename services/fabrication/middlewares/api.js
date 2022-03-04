@@ -1,27 +1,20 @@
-import type { RequestHandler } from "express";
-import type { StatusCodes } from "http-status-codes";
 import { getReasonPhrase } from "http-status-codes";
-
-type PaginatedQuery<T> = Partial<Record<"page" | "size", T>>;
 
 /**
  * Format data as a standard API repsponse
  *
- * @param payload The content
- * @param name The content name
- * @param meta The options of the pagination
+ * @param {*} payload The content
+ * @param {string} name The content name
+ * @param {Record<string, string>} meta The options of the pagination
  *
  * @returns Formated data
  */
-const buildResponse = <T extends PayloadType>(
-  payload: T,
+const buildResponse = (
+  payload,
   name = "payload",
-  meta: PaginatedQuery<string> = {}
+  meta = {}
 ) => {
-  const data: PaginatedQuery<number> & {
-    type?: string; // Type of payload
-    count?: number; // Total items available
-  } = {
+  const data = {
     count: 1,
     size: 1,
   };
@@ -42,7 +35,7 @@ const buildResponse = <T extends PayloadType>(
       payload = payload.slice(
         (data.page - 1) * data.size,
         data.page * data.size
-      ) as T;
+      );
     } else {
       data.type = "resource";
     }
@@ -56,15 +49,16 @@ const buildResponse = <T extends PayloadType>(
   };
 };
 
+
 /**
  * Format error as a standard API repsponse
  *
- * @param code The status code of the error
- * @param error The message of the error
+ * @param {number} code The status code of the error
+ * @param {Error|string} error The message of the error
  *
  * @returns Formated error
  */
-const buildError = (code: StatusCodes, error: Error | string) => ({
+const buildError = (code, error) => ({
   type: "error",
   error: {
     code,
@@ -73,14 +67,15 @@ const buildError = (code: StatusCodes, error: Error | string) => ({
   message: error instanceof Error ? error.message : error,
 });
 
+
 /**
  * Handler of the middleware
  *
- * @param req The request
- * @param res The response
- * @param next Call the next handler
+ * @param {Express.Request} req The request
+ * @param {Express.Result} res The response
+ * @param {Express.RequestHandler} next Call the next handler
  */
-const handler: RequestHandler = (req, res, next) => {
+const handler = (req, res, next) => {
   res.sendError = (code, error) => {
     console.error(error);
     return res.status(code).json({
@@ -91,7 +86,7 @@ const handler: RequestHandler = (req, res, next) => {
   res.sendPayload = (payload, name, links) => {
     const baseURL = req.protocol + "://" + req.get("host") + req.originalUrl;
 
-    const urls: Record<string, { href: string }> = {};
+    const urls = {};
     if (links) {
       urls.self = { href: baseURL };
       for (const name of links) {

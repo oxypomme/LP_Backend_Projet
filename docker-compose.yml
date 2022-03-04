@@ -36,6 +36,22 @@ services:
       - lbs_db
     networks:
       - lbs
+
+  # fabrication
+  lbs_fabrication:
+    container_name: lbs_fabrication
+    image: 'node:lts'
+    env_file: ./services/.env
+    working_dir: /usr/src/app
+    volumes:
+      - './services/fabrication:/usr/src/app'
+    ports:
+      - '3334:3000'
+    command: yarn dev
+    depends_on:
+      - lbs_db
+    networks:
+      - lbs
 networks:
   lbs:
     driver: bridge
