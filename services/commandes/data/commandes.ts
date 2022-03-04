@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import db from "../database";
 import { v4 as uuidv4 } from "uuid";
-import { getOneOrderItems } from "./items";
+import { getOneOrderItems, Item } from "./items";
 import { randomBytes } from "crypto";
 
 export enum CommandeStatus {
@@ -41,6 +41,7 @@ type EditData = {
   nom: string;
   mail: string;
   livraison: { date: string; heure: string };
+  items?: { uri: string; q: number; libelle: string; tarif: number }[];
 };
 
 export const getAllOrders = async () =>
@@ -104,25 +105,49 @@ export const replaceOneOrder = async (id: Commande["id"], data: EditData) => {
 };
 
 export const createNewOrder = async (data: EditData) => {
-  const { nom, mail, livraison } = data;
+  const { nom, mail, livraison, items } = data;
   const { date, heure } = livraison;
 
-  if (nom && mail && livraison && date && heure) {
+  if (nom && mail && livraison && date && heure && items) {
     const commande: Commande = {
       id: uuidv4(),
       created_at: dayjs().toDate(),
       livraison: dayjs(date + " " + heure, "D-M-YYYY h:m").toDate(),
       nom,
       mail,
-      montant: 0,
       remise: 0,
       token: randomBytes(16).toString("hex"),
       status: CommandeStatus.CREATED,
     };
 
-    await db.from<Commande>("commande").insert(commande).then();
+    const trx = await db.transaction();
+    try {
+      let montant = 0;
+      for (const item of items) {
+        montant += item.tarif * item.q;
+        await trx
+          .from<Item>("item")
+          .insert({
+            uri: item.uri,
+            libelle: item.libelle,
+            tarif: item.tarif,
+            quantite: item.q,
+            command_id: commande.id,
+          })
+          .then();
+      }
+      await trx
+        .from<Commande>("commande")
+        .insert({ ...commande, montant })
+        .then();
+      await trx.commit();
 
-    return commande.id;
+      return commande.id;
+    } catch (error) {
+      await trx.rollback();
+
+      throw new Error("Une erreur est survenue lors de l'ajout des items");
+    }
   } else {
     return undefined;
   }
