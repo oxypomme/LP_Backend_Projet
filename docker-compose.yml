@@ -52,6 +52,21 @@ services:
       - lbs_db
     networks:
       - lbs
+
+  # auth
+  lbs_authentification:
+    container_name: lbs_authentification
+    build: './services/authentification'
+    env_file: ./services/.env
+    # volumes:
+    #   - './services/authentification:/usr/src/app'
+    ports:
+      - '3335:3000'
+    depends_on:
+      - lbs_db
+    networks:
+      - lbs
+
 networks:
   lbs:
     driver: bridge

@@ -63,6 +63,7 @@ router.post("/", async (req, res) => {
     });
 
     if (commande) {
+      // Why not set token is cookies
       res.status(StatusCodes.CREATED).sendPayload(
         {
           id: commande.id,

@@ -5,9 +5,9 @@ LP2
 ## Services
 
 - lbs_commandes: API Commandes (Node)
-- lbs_fabrication: API Fabrication
+- lbs_fabrication: API Fabrication (Node)
 - lbs_catalogue: API Catalogue
-- lbs_authentification: API Authentification
+- lbs_authentification: API Authentification (Deno)
 - lbs_gateway_front: API Gateway Frontoffice
 - lbs_gateway_back: API Gateway Backoffice
 

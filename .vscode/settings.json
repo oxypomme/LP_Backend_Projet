@@ -1,3 +1,10 @@
 {
-	"conventionalCommits.scopes": ["commandes", "fabrication"]
+	"conventionalCommits.scopes": [
+		"commandes",
+		"fabrication",
+		"authentification"
+	],
+	"deno.enable": false,
+	"deno.lint": true,
+	"deno.unstable": false
 }
