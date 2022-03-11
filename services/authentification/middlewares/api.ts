@@ -2,7 +2,6 @@ import { Middleware, isHttpError, Status } from "../deps.ts";
 
 type CustomError = {
 	status: Status;
-	cause: string;
 	message: string;
 };
 
@@ -19,14 +18,12 @@ export const errorHandler: Middleware = async (ctx, next) => {
 	try {
 		await next();
 	} catch (error) {
-		let err = {
-			status: Status.InternalServerError,
-			cause: "Unexpected Error",
-			message: error instanceof Error ? error.message : error,
+		const err = {
+			status: error.status || Status.InternalServerError,
+			message: error.message || error,
 		};
-		if (isHttpError(error)) {
-			err = error as CustomError;
-		} else {
+
+		if (!isHttpError(error)) {
 			console.error("Error :", err.message);
 		}
 

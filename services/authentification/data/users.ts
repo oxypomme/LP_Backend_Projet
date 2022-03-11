@@ -1,5 +1,6 @@
 import db from "../database.ts";
 import { compare, hash, denodb } from "../deps.ts";
+import { assertInputUser } from "../schemas/user.ts";
 
 class User extends denodb.Model {
 	static table = "client";
@@ -29,8 +30,7 @@ export const findUser = async (login: string, password: string) => {
 };
 
 export const createUser = async (data: unknown) => {
-	// Joi
-	const { nom, mail, mdp } = data as any;
+	const { nom, mail, mdp } = assertInputUser(data);
 	const u = {
 		nom_client: nom,
 		mail_client: mail,
