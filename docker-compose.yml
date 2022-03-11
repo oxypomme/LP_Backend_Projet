@@ -4,7 +4,7 @@ services:
   lbs_db:
     container_name: lbs_db
     image: 'mariadb:latest'
-    env_file: ./services/.env
+    env_file: ./.env
     volumes:
       - "./docker/db:/var/lib/mysql"
       - "./docker/sql:/docker-entrypoint-initdb.d/"
@@ -13,7 +13,9 @@ services:
   lbs_adminer:
     container_name: lbs_adminer
     image: 'adminer'
-    env_file: ./services/.env
+    env_file: ./.env
+    environment:
+      ADMINER_DEFAULT_SERVER: ${MARIADB_HOST}
     ports:
       - 8080:8080
     depends_on:
@@ -25,7 +27,7 @@ services:
   lbs_commandes:
     container_name: lbs_commandes
     image: 'node:lts'
-    env_file: ./services/.env
+    env_file: ./.env
     working_dir: /usr/src/app
     volumes:
       - './services/commandes:/usr/src/app'
@@ -41,7 +43,7 @@ services:
   lbs_fabrication:
     container_name: lbs_fabrication
     image: 'node:lts'
-    env_file: ./services/.env
+    env_file: ./.env
     working_dir: /usr/src/app
     volumes:
       - './services/fabrication:/usr/src/app'
@@ -57,11 +59,37 @@ services:
   lbs_authentification:
     container_name: lbs_authentification
     build: './services/authentification'
-    env_file: ./services/.env
+    env_file: ./.env
     # volumes:
     #   - './services/authentification:/usr/src/app'
     ports:
       - '3335:3000'
+    depends_on:
+      - lbs_db
+    networks:
+      - lbs
+
+  # catalogue
+  lbs_catalogue:
+    container_name: lbs_catalogue
+    image: 'directus/directus:latest'
+    environment:
+      KEY: ${ADMIN_KEY}
+      SECRET: ${ADMIN_SECRET}
+
+      DB_CLIENT: mysql
+      DB_HOST: ${MARIADB_HOST}
+      DB_PORT: ${MARIADB_PORT}
+      DB_DATABASE: ${ADMIN_DATABASE}
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: ${MARIADB_PASSWORD}
+
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    volumes:
+      - './services/catalogue:/directus'
+    ports:
+      - '3336:8055'
     depends_on:
       - lbs_db
     networks:
