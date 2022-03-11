@@ -8,7 +8,7 @@ LP2
 - lbs_fabrication: API Fabrication (Node)
 - lbs_catalogue: API Catalogue (Directus)
 - lbs_authentification: API Authentification (Deno)
-- lbs_gateway_front: API Gateway Frontoffice
+- lbs_gateway_front: API Gateway Frontoffice (Go)
 - lbs_gateway_back: API Gateway Backoffice
 
 ## Env vars
@@ -19,8 +19,6 @@ LP2
 
 - Install dependencies:
 	- Node : `docker-compose run <service> yarn`
-	- PHP : `docker-compose run <service> composer require`
-	- Dart : ``
-	- GO : ``
+	- Go : `docker-compose run <service> go mod download`
 - Interactive container: `docker exec -it <service> sh`
 - Check API: `curl -i localhost:<port>`

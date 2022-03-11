@@ -2,7 +2,10 @@
 	"conventionalCommits.scopes": [
 		"commandes",
 		"fabrication",
-		"authentification"
+		"authentification",
+		"catalogue",
+		"gateway-front",
+		"gateway-back"
 	],
 	"deno.enable": false,
 	"deno.lint": true,

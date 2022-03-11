@@ -95,6 +95,21 @@ services:
     networks:
       - lbs
 
+  # Front Gateway
+  lbs_front_gateway:
+    container_name: lbs_front_gateway
+    build: './services/gateway-front'
+    env_file: ./.env
+    volumes:
+      - './services/gateway-front:/usr/src/app'
+    ports:
+      - '3337:8080'
+    depends_on:
+      - lbs_commandes
+      - lbs_catalogue
+    networks:
+      - lbs
+
 networks:
   lbs:
     driver: bridge
