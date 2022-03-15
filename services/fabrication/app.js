@@ -1,3 +1,5 @@
+"use strict";
+
 import express from "express";
 import logger from "morgan";
 import { StatusCodes } from "http-status-codes";

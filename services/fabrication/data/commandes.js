@@ -1,3 +1,5 @@
+"use strict";
+
 import db from "../database.js";
 
 export const getAllOrders = async () =>

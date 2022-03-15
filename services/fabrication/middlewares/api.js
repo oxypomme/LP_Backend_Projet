@@ -1,3 +1,5 @@
+"use strict";
+
 import { getReasonPhrase } from "http-status-codes";
 
 /**

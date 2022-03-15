@@ -22,6 +22,11 @@ services:
       - lbs_db
     networks:
       - lbs
+  lbs_redis:
+    container_name: lbs_redis
+    image: redis
+    networks:
+      - lbs
 
   # commandes
   lbs_commandes:
@@ -31,8 +36,8 @@ services:
     working_dir: /usr/src/app
     volumes:
       - './services/commandes:/usr/src/app'
-    ports:
-      - '3333:3000'
+    # ports:
+    #   - '3333:3000'
     command: yarn dev
     depends_on:
       - lbs_db
@@ -88,8 +93,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     volumes:
       - './services/catalogue:/directus'
-    ports:
-      - '3336:8055'
+    # ports:
+    #   - '3336:8055'
     depends_on:
       - lbs_db
     networks:
@@ -98,13 +103,16 @@ services:
   # Front Gateway
   lbs_front_gateway:
     container_name: lbs_front_gateway
-    build: './services/gateway-front'
+    image: 'node:lts'
     env_file: ./.env
+    working_dir: /usr/src/app
+    command: yarn dev
     volumes:
       - './services/gateway-front:/usr/src/app'
     ports:
-      - '3337:8080'
+      - '3337:3000'
     depends_on:
+      - lbs_redis
       - lbs_commandes
       - lbs_catalogue
     networks:

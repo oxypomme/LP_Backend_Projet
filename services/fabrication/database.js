@@ -1,3 +1,5 @@
+"use strict";
+
 import knex from "knex";
 import { env } from "process";
 

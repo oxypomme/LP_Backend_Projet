@@ -8,7 +8,7 @@ LP2
 - lbs_fabrication: API Fabrication (Node)
 - lbs_catalogue: API Catalogue (Directus)
 - lbs_authentification: API Authentification (Deno)
-- lbs_gateway_front: API Gateway Frontoffice (Go)
+- lbs_gateway_front: API Gateway Frontoffice (Node)
 - lbs_gateway_back: API Gateway Backoffice
 
 ## Env vars

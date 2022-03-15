@@ -1,3 +1,5 @@
+"use strict";
+
 import { Router } from "express";
 import { StatusCodes } from "http-status-codes";
 import { getAllOrders } from "../data/commandes.js";
