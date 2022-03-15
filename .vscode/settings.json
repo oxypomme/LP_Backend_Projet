@@ -7,7 +7,7 @@
 		"gateway-front",
 		"gateway-back"
 	],
-	"deno.enable": false,
+	"deno.enable": true,
 	"deno.lint": true,
 	"deno.unstable": false
 }

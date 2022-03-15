@@ -1,6 +1,7 @@
 import { Application } from "./deps.ts";
 import { errorHandler } from "./middlewares/api.ts";
 import Router from "./routes/index.ts";
+import Fallback from "./routes/fallback.ts";
 
 const app = new Application();
 
@@ -25,5 +26,8 @@ app.use(errorHandler);
 
 app.use(Router.routes());
 app.use(Router.allowedMethods());
+
+app.use(Fallback.routes());
+app.use(Fallback.allowedMethods());
 
 await app.listen({ port: 3000 });

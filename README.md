@@ -9,7 +9,7 @@ LP2
 - lbs_catalogue: API Catalogue (Directus)
 - lbs_authentification: API Authentification (Deno)
 - lbs_gateway_front: API Gateway Frontoffice (Node)
-- lbs_gateway_back: API Gateway Backoffice
+- lbs_gateway_back: API Gateway Backoffice (Node)
 
 ## Env vars
 

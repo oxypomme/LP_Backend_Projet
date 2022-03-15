@@ -52,8 +52,8 @@ services:
     working_dir: /usr/src/app
     volumes:
       - './services/fabrication:/usr/src/app'
-    ports:
-      - '3334:3000'
+    # ports:
+    #   - '3334:3000'
     command: yarn dev
     depends_on:
       - lbs_db
@@ -67,8 +67,8 @@ services:
     env_file: ./.env
     # volumes:
     #   - './services/authentification:/usr/src/app'
-    ports:
-      - '3335:3000'
+    # ports:
+    #   - '3335:3000'
     depends_on:
       - lbs_db
     networks:
@@ -115,6 +115,24 @@ services:
       - lbs_redis
       - lbs_commandes
       - lbs_catalogue
+    networks:
+      - lbs
+
+  # Back Gateway
+  lbs_back_gateway:
+    container_name: lbs_back_gateway
+    image: 'node:lts'
+    env_file: ./.env
+    working_dir: /usr/src/app
+    command: yarn dev
+    volumes:
+      - './services/gateway-back:/usr/src/app'
+    ports:
+      - '3338:3000'
+    depends_on:
+      - lbs_redis
+      - lbs_fabrication
+      - lbs_authentification
     networks:
       - lbs
 
