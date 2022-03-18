@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
 	createProxyMiddleware, responseInterceptor,
 } from "http-proxy-middleware";
+import axios from "axios";
 
 const router = Router();
 
@@ -29,18 +30,18 @@ const routes = [
 	},
 ];
 
-let _next = undefined;
-const authMiddleware = createProxyMiddleware({
-	target: "http://lbs_authentification:3000",
-	changeOrigin: true,
-	pathRewrite: {
-		[`^/.*`]: "/check",
-	},
-	selfHandleResponse: true,
-	onProxyRes: responseInterceptor(async (buffer, pRes, req, res) => {
-		// _next(req, res);
-	})
-});
+const authMiddleware = async (req, res, next) => {
+	try {
+		await axios.get('http://lbs_authentification:3000/check', {
+			headers: {
+				Authorization: req.get('authorization') ?? ''
+			}
+		})
+		next()
+	} catch (error) {
+		res.status(error.response.status).json(error.response.data);
+	}
+}
 
 for (const r of routes) {
 	if(r.auth === false) {
@@ -49,7 +50,6 @@ for (const r of routes) {
 			createProxyMiddleware(r.proxy)
 		);
 	} else {
-		_next = createProxyMiddleware(r.proxy);
 		router.use(
 			r.url,
 			authMiddleware,
