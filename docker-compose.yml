@@ -93,8 +93,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     volumes:
       - './services/catalogue:/directus'
-    # ports:
-    #   - '3336:8055'
+    ports:
+      - '3336:8055'
     depends_on:
       - lbs_db
     networks:
