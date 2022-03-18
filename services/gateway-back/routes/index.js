@@ -4,6 +4,9 @@ import {
 } from "http-proxy-middleware";
 import axios from "axios";
 
+const API_AUTH = "http://lbs_authentification:3000";
+const API_FABRICATION = "http://lbs_fabrication:3000";
+
 const router = Router();
 
 const routes = [
@@ -11,7 +14,7 @@ const routes = [
 		url: ["/signup", "/signin"],
 		auth: false,
 		proxy: {
-			target: "http://lbs_authentification:3000",
+			target: API_AUTH,
 			changeOrigin: true,
 			pathRewrite: {
 				[`^/(signup|signin)`]: "/$1",
@@ -21,7 +24,7 @@ const routes = [
 	{
 		url: "/commandes",
 		proxy: {
-			target: "http://lbs_fabrication:3000",
+			target: API_FABRICATION,
 			changeOrigin: true,
 			pathRewrite: {
 				[`^/commandes`]: "/commandes",
@@ -32,7 +35,7 @@ const routes = [
 
 const authMiddleware = async (req, res, next) => {
 	try {
-		await axios.get('http://lbs_authentification:3000/check', {
+		await axios.get(`${API_AUTH}/check`, {
 			headers: {
 				Authorization: req.get('authorization') ?? ''
 			}
