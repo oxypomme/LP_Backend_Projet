@@ -1,11 +1,13 @@
 import { RequestHandler, Router } from "express";
 import { StatusCodes } from "http-status-codes";
 import {
+  checkoutOrder,
   createNewOrder,
   getAllOrders,
   getOneOrder,
   replaceOneOrder,
 } from "../data/commandes";
+import { CommandeStatus } from "../types/ECommandeStatus";
 import itemsRouter from "./items";
 
 const router = Router();
@@ -109,18 +111,57 @@ router.put("/:id", auth, async (req, res) => {
   try {
     const commande = await getOneOrder(req.params.id, {
       query: {
-        select: ["id"],
+        select: ["id", "status"],
       },
     });
     if (commande) {
-      const result = await replaceOneOrder(req.params.id, req.body);
-      if (result) {
-        res.status(StatusCodes.NO_CONTENT).send({});
+      if (!commande.status || commande.status < CommandeStatus.PAID) {
+        const result = await replaceOneOrder(req.params.id, req.body);
+        if (result) {
+          res.status(StatusCodes.NO_CONTENT).send({});
+        } else {
+          res.sendError(
+            StatusCodes.NOT_ACCEPTABLE,
+            "Le contenu envoyé n'est pas correct"
+          );
+        }
       } else {
         res.sendError(
-          StatusCodes.NOT_ACCEPTABLE,
-          "Le contenu envoyé n'est pas correct"
+          StatusCodes.CONFLICT,
+          "Impossible de modifier une commande payée"
         );
+      }
+    } else {
+      res.sendError(StatusCodes.NOT_FOUND, "Ressource non disponible");
+    }
+  } catch (error) {
+    res.sendError(
+      (error as CustomError).status ?? StatusCodes.INTERNAL_SERVER_ERROR,
+      "Une erreur est survenue : " + (error as Error).message
+    );
+  }
+});
+
+router.post("/:id/checkout", auth, async (req, res) => {
+  try {
+    const commande = await getOneOrder(req.params.id, {
+      query: {
+        select: ["id", "status"],
+      },
+    });
+    if (commande) {
+      if (!commande.status || commande.status < CommandeStatus.PAID) {
+        const result = await checkoutOrder(req.params.id, req.body);
+        if (result) {
+          res.status(StatusCodes.NO_CONTENT).send({});
+        } else {
+          res.sendError(
+            StatusCodes.NOT_ACCEPTABLE,
+            "Le contenu envoyé n'est pas correct"
+          );
+        }
+      } else {
+        res.sendError(StatusCodes.CONFLICT, "La commande est déjà payée");
       }
     } else {
       res.sendError(StatusCodes.NOT_FOUND, "Ressource non disponible");

@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import Joi from "../joi";
-import { CommandeInput } from "../types/commandes";
+import type { CommandeInput } from "../types/commandes";
 
 const inputSchema = Joi.object({
   nom: Joi.string().required().regex(/[a-z]/i),

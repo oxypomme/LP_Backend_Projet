@@ -1,6 +1,8 @@
 import { randomBytes } from "crypto";
 import { v4 as uuidv4 } from "uuid";
 import db from "../database";
+import { doCheckout } from "../features/checkout";
+import { assertInputCheckout } from "../schemas/checkout";
 import { assertInputCommande } from "../schemas/commande";
 import type { Commande } from "../types/commandes";
 import { CommandeStatus } from "../types/ECommandeStatus";
@@ -63,11 +65,25 @@ export const replaceOneOrder = async (id: Commande["id"], data: unknown) => {
   const hourArr = heure.split(":");
   date.setHours(+hourArr[0], +hourArr[1]);
 
-  return await db.from<Commande>("commande").where("id", id).update({
+  return db.from<Commande>("commande").where("id", id).update({
     mail,
     nom,
     livraison: date,
   });
+};
+
+export const checkoutOrder = async (id: Commande["id"], data: unknown) => {
+  // Validating parameters
+  const input = await assertInputCheckout(data);
+
+  const checkout = await doCheckout(input);
+  return db
+    .from<Commande>("commande")
+    .where("id", id)
+    .update({
+      ...checkout,
+      status: CommandeStatus.PAID,
+    });
 };
 
 export const createNewOrder = async (data: unknown) => {

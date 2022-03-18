@@ -1,3 +1,4 @@
+import { CheckoutData } from "./checkout";
 import type { CommandeStatus } from "./ECommandeStatus";
 
 export type Commande = {
@@ -11,11 +12,8 @@ export type Commande = {
   remise?: number;
   token?: string;
   client_id?: number;
-  ref_paiement?: string;
-  date_paiement?: Date;
-  mode_paiement?: number;
-  status: CommandeStatus;
-};
+  status?: CommandeStatus;
+} & Partial<CheckoutData>;
 
 export type CommandeInput = {
   nom: string;
