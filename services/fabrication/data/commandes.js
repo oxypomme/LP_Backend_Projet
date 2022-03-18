@@ -29,3 +29,7 @@ export const getOneOrder = async (id) => {
     return undefined;
   }
 };
+
+export const updateOrder = async (id, data) => {
+  return db.from("commande").where("id", id).update(data);
+};
