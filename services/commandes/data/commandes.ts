@@ -16,8 +16,8 @@ type GetOptions = {
   };
 };
 
-export const getAllOrders = async () =>
-  await db
+export const getAllOrders = () =>
+  db
     .from<Commande>("commande")
     .select("id", "mail", "created_at", "montant")
     .then();
