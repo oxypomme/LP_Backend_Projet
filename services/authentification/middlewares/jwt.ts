@@ -7,6 +7,25 @@ const JWT_KEY = await crypto.subtle.generateKey(
 	["sign", "verify"]
 );
 
+const genJWT = async () => {
+	const exp = jwt.getNumericDate(60 * 60);
+	return {
+		exp,
+		token: await jwt.create(
+			{ alg: "HS512", typ: "JWT" },
+			{
+				exp: exp,
+				iat: jwt.getNumericDate(new Date()),
+			},
+			JWT_KEY
+		),
+	};
+};
+
+export const refreshJWT: Middleware = async (ctx) => {
+	ctx.response.body = await genJWT();
+};
+
 export const createJWT: Middleware = async (ctx) => {
 	try {
 		const header = ctx.request.headers.get("authorization");
@@ -29,18 +48,7 @@ export const createJWT: Middleware = async (ctx) => {
 			throw "Bad credentials";
 		}
 
-		const exp = jwt.getNumericDate(60 * 60);
-		ctx.response.body = {
-			exp,
-			token: await jwt.create(
-				{ alg: "HS512", typ: "JWT" },
-				{
-					exp: exp,
-					iat: jwt.getNumericDate(new Date()),
-				},
-				JWT_KEY
-			),
-		};
+		ctx.response.body = await genJWT();
 	} catch (error) {
 		ctx.throw(Status.Unauthorized, error);
 	}
